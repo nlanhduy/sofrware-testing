@@ -1,0 +1,74 @@
+[
+  {
+    "testName": "Test empty search term",
+    "searchTerm": "",
+    "description": "An empty search should return all products",
+    "expectedCount": 26
+  },
+  {
+    "testName": "Test search with a single character",
+    "searchTerm": "a",
+    "description": "A search for a single character 'a' should return all matching results",
+    "expectedCount": 16
+  },
+  {
+    "testName": "Test maximum valid search term (50 chars)",
+    "searchTerm": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "description": "A search with the maximum allowed length should return no results",
+    "expectedCount": 0
+  },
+  {
+    "testName": "Test search term exceeding 50 characters",
+    "searchTerm": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "description": "A search term exceeding the maximum length should return no results",
+    "expectedCount": 0
+  },
+  {
+    "testName": "Test search with special characters",
+    "searchTerm": "@#$$%^^",
+    "description": "Special characters not present in any product name should return no matches",
+    "expectedCount": 0
+  },
+  {
+    "testName": "Search for keyword 'Hammer'",
+    "searchTerm": "Hammer",
+    "description": "Should return all products with the keyword 'Hammer' in their name",
+    "expectedCount": 7
+  },
+  {
+    "testName": "Search for keyword 'Wrench'",
+    "searchTerm": "Wrench",
+    "description": "Should return all products with the keyword 'Wrench' in their name",
+    "expectedCount": 1
+  },
+  {
+    "testName": "Search with lowercase keyword 'drill'",
+    "searchTerm": "drill",
+    "description": "A case-insensitive match for the keyword 'drill' should return all drills",
+    "expectedCount": 4
+  },
+  {
+    "testName": "Search with uppercase keyword 'SAW'",
+    "searchTerm": "SAW",
+    "description": "A case-insensitive match for the uppercase keyword 'SAW' should find all saws",
+    "expectedCount": 2
+  },
+  {
+    "testName": "Partial match in product name",
+    "searchTerm": "Screw",
+    "description": "A partial keyword 'Screw' should return all screwdrivers",
+    "expectedCount": 2
+  },
+  {
+    "testName": "Search with a keyword not in any product",
+    "searchTerm": "Mallet",
+    "description": "Should return 0 for a term not present in any product name",
+    "expectedCount": 0
+  },
+  {
+    "testName": "Search for substring 'sand'",
+    "searchTerm": "sand",
+    "description": "A search should match substrings, e.g., 'sand' in 'sander'",
+    "expectedCount": 3
+  }
+]

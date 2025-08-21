@@ -1,0 +1,63 @@
+[
+  {
+    "testName": "Test minimum valid price range",
+    "minPrice": 1,
+    "maxPrice": 1
+  },
+  {
+    "testName": "Test full valid price range",
+    "minPrice": 1,
+    "maxPrice": 200
+  },
+  {
+    "testName": "Test maximum valid price range",
+    "minPrice": 200,
+    "maxPrice": 200
+  },
+  {
+    "testName": "Test valid mid-range price filter",
+    "minPrice": 50,
+    "maxPrice": 150
+  },
+  {
+    "testName": "Test minimum price below valid range",
+    "minPrice": 0,
+    "maxPrice": 100
+  },
+  {
+    "testName": "Test maximum price above valid range",
+    "minPrice": 100,
+    "maxPrice": 201
+  },
+  {
+    "testName": "Test minimum price greater than maximum price",
+    "minPrice": 150,
+    "maxPrice": 100
+  },
+  {
+    "testName": "Test small price range",
+    "minPrice": 20,
+    "maxPrice": 21
+  },
+  {
+    "testName": "Test lower boundary price range",
+    "minPrice": 1,
+    "maxPrice": 10
+  },
+  {
+    "testName": "Test upper boundary price range",
+    "minPrice": 190,
+    "maxPrice": 200
+  },
+  {
+    "testName": "Test decimal price values",
+    "minPrice": 10.5,
+    "maxPrice": 50.75
+  },
+  {
+    "testName": "Test reset to default price range",
+    "minPrice": 1,
+    "maxPrice": 100,
+    "isReset": true
+  }
+]

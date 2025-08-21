@@ -1,27 +1,19 @@
-FROM node:18.19.0-alpine
+FROM node:20.11-alpine
 
-RUN apk update && \
-    apk add bash && \
-    npm install -g npm@8.3.0
+RUN apk update && apk add --no-cache bash
+RUN npm install -g npm@9.6.7
+RUN npm install -g @angular/cli
 
-RUN npm install -s -g @angular/cli
-#    && \
-#    mkdir -p /app # Create a directory where our app will be placed
+WORKDIR /app
 
-# Change directory so that our commands run inside this new directory
-#WORKDIR /app
+# Phải COPY package.json + package-lock.json trước khi npm install
+COPY package*.json ./
 
-# Copy dependency definitions
-#COPY package*.json /app/
+RUN npm install --legacy-peer-deps --force
 
-# Install dependencies
-# RUN npm install
+# COPY toàn bộ source code vào image
+COPY . .
 
-# Get all the code needed to run the app
-#COPY . /app/
-
-# Expose the port the app runs in
 EXPOSE 4200
 
-# Serve the app
-CMD ["npm", "install --dev --legacy-peer-deps --force", "start"]
+CMD ["ng", "serve", "--host", "0.0.0.0", "--port", "4200"]

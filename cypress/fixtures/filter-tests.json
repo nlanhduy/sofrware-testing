@@ -1,0 +1,62 @@
+[
+  {
+    "testName": "Test single category selection - Hammer",
+    "category": "Hammer",
+    "categoryId": "3",
+    "brand": null,
+    "expectedCount": 7
+  },
+  {
+    "testName": "Test single category selection - Pliers",
+    "category": "Pliers",
+    "categoryId": "7",
+    "brand": null,
+    "expectedCount": 5
+  },
+  {
+    "testName": "Test single category selection - Drill",
+    "category": "Drill",
+    "categoryId": "11",
+    "brand": null,
+    "expectedCount": 4
+  },
+  {
+    "testName": "Test single brand selection - Brand 1",
+    "category": null,
+    "categoryId": null,
+    "brand": "Brand name 1",
+    "brandId": "1",
+    "expectedCount": 27
+  },
+  {
+    "testName": "Test single brand selection - Brand 2",
+    "category": null,
+    "categoryId": null,
+    "brand": "Brand name 2",
+    "brandId": "2",
+    "expectedCount": 2
+  },
+  {
+    "testName": "Test combined category and brand filter",
+    "category": "Hammer",
+    "categoryId": "3",
+    "brand": "Brand name 1",
+    "brandId": "1",
+    "expectedCount": 7
+  },
+  {
+    "testName": "Test multiple category selection",
+    "categories": ["Hammer", "Pliers"],
+    "categoryIds": ["3", "7"],
+    "brand": null,
+    "expectedCount": 12
+  },
+  {
+    "testName": "Test no selection (all products)",
+    "category": null,
+    "categoryId": null,
+    "brand": null,
+    "brandId": null,
+    "expectedCount": 26
+  }
+]
