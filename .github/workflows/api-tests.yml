@@ -20,14 +20,6 @@ jobs:
           echo "SPRINT_FOLDER=sprint5-with-bugs" >> $GITHUB_ENV
           echo "DISABLE_LOGGING=false" >> $GITHUB_ENV
 
-      - name: Verify sprint folder structure
-        run: |
-          echo "Checking sprint folder structure..."
-          ls -la ${SPRINT_FOLDER} || echo "Sprint folder not found"
-          ls -la ${SPRINT_FOLDER}/API || echo "API folder not found"
-          ls -la ${SPRINT_FOLDER}/UI || echo "UI folder not found"
-
-      # Tạo thư mục storage và bootstrap/cache với quyền truy cập đúng trước khi khởi động Docker
       - name: Prepare Laravel directories
         run: |
           mkdir -p ${SPRINT_FOLDER}/API/storage/logs
@@ -44,113 +36,10 @@ jobs:
           echo "Waiting for services to start up..."
           sleep 15
 
-      - name: Check if services are running
-        run: |
-          docker compose ps
-          # Check if laravel-api is running
-          if ! docker compose exec -T laravel-api php artisan --version; then
-            echo "Laravel API service is not running properly"
-            docker compose logs laravel-api
-            exit 1
-          fi
-          # Check if web server is running
-          if ! curl -sSf http://localhost:8091/status > /dev/null; then
-            echo "Web server is not running properly"
-            docker compose logs web
-            exit 1
-          fi
-          # Check if database is running
-          if ! docker compose exec -T mariadb mysqladmin ping -h localhost -u root -proot --silent; then
-            echo "Database is not running properly"
-            docker compose logs mariadb
-            exit 1
-          fi
-
-      - name: Check API version
-        run: |
-          echo "Checking API version..."
-          docker compose exec -T laravel-api php artisan --version
-          if docker compose exec -T laravel-api composer show >/dev/null 2>&1; then
-            docker compose exec -T laravel-api composer show | grep laravel || echo "Laravel packages not found"
-          else
-            echo "Composer not installed in laravel-api container"
-          fi
-
       - name: Set up database
         run: |
           docker compose exec -T laravel-api php artisan migrate:fresh --seed
           echo "Database setup complete"
-
-      - name: Verify database setup
-        run: |
-          echo "Verifying database setup..."
-          docker compose exec -T mariadb mysql -u root -proot -e "USE toolshop; SELECT COUNT(*) FROM users; SELECT COUNT(*) FROM products;"
-
-      - name: Test API connection
-        run: |
-          echo "Testing API health..."
-          curl -v http://localhost:8091/status || echo "Status endpoint not available"
-          echo "Testing API documentation..."
-          curl -s http://localhost:8091/api/documentation | head -20
-
-      - name: Check API Endpoints via Swagger
-        run: |
-          echo "Checking available API endpoints..."
-          curl -s http://localhost:8091/api/documentation/json | jq '.paths | keys' || echo "Could not fetch API endpoints"
-
-      - name: Test Product API endpoint
-        run: |
-          echo "Testing Product API endpoint..."
-          echo "Response from products/1:"
-          curl -s http://localhost:8091/products/1 | jq || echo "Product endpoint failed or jq error"
-
-      - name: Test Admin Login API
-        run: |
-          echo "Testing Admin Login API..."
-          RESPONSE=$(curl -s -X POST http://localhost:8091/users/login \
-            -H "Content-Type: application/json" \
-            -d '{"email": "admin@practicesoftwaretesting.com", "password": "welcome01"}')
-          echo "Login response:"
-          echo "$RESPONSE"
-          # Extract token
-          TOKEN=$(echo $RESPONSE | jq -r '.access_token // empty')
-          if [ -n "$TOKEN" ]; then
-            echo "Successfully extracted token"
-            echo "AUTH_TOKEN=$TOKEN" >> $GITHUB_ENV
-          else
-            echo "Failed to extract token from response"
-          fi
-
-      - name: Debug API Login Issue
-        if: env.AUTH_TOKEN == ''
-        run: |
-          echo "Checking Laravel logs for login issues..."
-          docker compose exec -T laravel-api ls -la /var/www/storage/logs/ || echo "Cannot list log directory"
-          docker compose exec -T laravel-api cat /var/www/storage/logs/laravel.log || echo "Could not access Laravel logs"
-
-          echo "Verifying admin user in database..."
-          docker compose exec -T mariadb mysql -u root -proot -e "USE toolshop; SELECT id, email, first_name, last_name FROM users WHERE email='admin@practicesoftwaretesting.com';"
-
-          echo "Testing API login with curl verbose..."
-          curl -v -X POST http://localhost:8091/users/login \
-            -H "Content-Type: application/json" \
-            -d '{"email": "admin@practicesoftwaretesting.com", "password": "welcome01"}'
-
-          echo "Checking Laravel configuration..."
-          docker compose exec -T laravel-api php artisan config:clear
-          docker compose exec -T laravel-api php artisan cache:clear
-
-          echo "Trying login again after fixes..."
-          RESPONSE=$(curl -s -X POST http://localhost:8091/users/login \
-            -H "Content-Type: application/json" \
-            -d '{"email": "admin@practicesoftwaretesting.com", "password": "welcome01"}')
-          echo "Login response after fixes:"
-          echo "$RESPONSE"
-          TOKEN=$(echo $RESPONSE | jq -r '.access_token // empty')
-          if [ -n "$TOKEN" ]; then
-            echo "Successfully extracted token after fixes"
-            echo "AUTH_TOKEN=$TOKEN" >> $GITHUB_ENV
-          fi
 
       - name: Create environment file for Postman
         run: |

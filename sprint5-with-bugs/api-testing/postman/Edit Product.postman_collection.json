@@ -62,7 +62,30 @@
         {
           "listen": "prerequest",
           "script": {
-            "exec": [""],
+            "exec": [
+              "function smartParse(value) {\r",
+              "    if (value === undefined || value === null) return value;\r",
+              "\r",
+              "    if (!isNaN(value) && String(value).trim() !== \"\") {\r",
+              "        return Number(value);\r",
+              "    }\r",
+              "    return String(value);\r",
+              "}\r",
+              "\r",
+              "let body = {\r",
+              "  name: pm.iterationData.get(\"name\"),\r",
+              "  description: pm.iterationData.get(\"description\"),\r",
+              "  stock: smartParse(pm.iterationData.get(\"stock\")),\r",
+              "  price: smartParse(pm.iterationData.get(\"price\")),\r",
+              "  brand_id: smartParse(pm.iterationData.get(\"brand_id\")),\r",
+              "  category_id: smartParse(pm.iterationData.get(\"category_id\")),\r",
+              "  product_image_id: smartParse(pm.iterationData.get(\"product_image_id\")),\r",
+              "  is_location_offer: String(pm.iterationData.get(\"is_location_offer\")).toLowerCase() === \"true\",\r",
+              "  is_rental: String(pm.iterationData.get(\"is_rental\")).toLowerCase() === \"true\"\r",
+              "};\r",
+              "\r",
+              "pm.collectionVariables.set(\"productBody\", JSON.stringify(body));"
+            ],
             "type": "text/javascript",
             "packages": {}
           }
@@ -105,7 +128,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\r\n  \"name\": \"{{name}}\",\r\n  \"description\": \"{{description}}\",\r\n  \"stock\": \"{{stock}}\",\r\n  \"price\": \"{{price}}\",\r\n  \"brand_id\": \"{{brand_id}}\",\r\n  \"category_id\": \"{{category_id}}\",\r\n  \"product_image_id\": \"{{product_image_id}}\",\r\n  \"is_location_offer\": {{is_location_offer}},\r\n  \"is_rental\": {{is_rental}}\r\n}\r\n",
+          "raw": "{{productBody}}",
           "options": {
             "raw": {
               "language": "json"
