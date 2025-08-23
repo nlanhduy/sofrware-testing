@@ -70,7 +70,8 @@ jobs:
         run: |
           echo "Checking API version..."
           docker compose exec -T laravel-api php artisan --version
-          docker compose exec -T laravel-api composer show | grep laravel
+          docker compose exec -T laravel-api composer show | grep laravel || true
+          docker compose exec -T laravel-api composer show 2>/dev/null | grep laravel || echo "Laravel packages not found"
 
       - name: Set up database
         run: |
