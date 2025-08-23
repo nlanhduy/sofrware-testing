@@ -2,9 +2,9 @@ name: API Tests with Newman
 
 on:
   push:
-    branches: [main, master, develop]
+    branches: [ main, master, develop ]
   pull_request:
-    branches: [main, master]
+    branches: [ main, master ]
   workflow_dispatch:
 
 jobs:
@@ -12,23 +12,23 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
-
+        uses: actions/checkout@v4
+      
       - name: Set up Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: "16"
-
+          node-version: '16'
+      
       - name: Install Newman and reporters
         run: |
           npm install -g newman
           npm install -g newman-reporter-htmlextra
-
+      
       # Chạy tất cả collection với file CSV tương ứng
       - name: Run All API Tests
         run: |
           mkdir -p ./newman-results
-
+          
           # Lặp qua tất cả các file collection
           for collection in ./api-testing/postman/*.postman_collection.json; do
             # Lấy tên collection (không có đuôi .postman_collection.json)
@@ -56,11 +56,11 @@ jobs:
               echo "CSV file not found for $collection_name"
             fi
           done
-
-      # Upload tất cả kết quả test
+      
+      # Upload tất cả kết quả test (đã cập nhật lên v4)
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: newman-test-results
           path: ./newman-results
