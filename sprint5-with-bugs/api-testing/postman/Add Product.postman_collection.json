@@ -34,7 +34,7 @@
         "header": [
           {
             "key": "Content-Type",
-            "value": "application/json",
+            "value": "application/json;charset=UTF-8",
             "type": "text"
           }
         ],
@@ -158,7 +158,7 @@
         "header": [
           {
             "key": "Content-Type",
-            "value": "application/json",
+            "value": "application/json;charset=UTF-8",
             "type": "text"
           }
         ],
