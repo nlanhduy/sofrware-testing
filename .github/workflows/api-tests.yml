@@ -1,0 +1,66 @@
+name: API Tests with Newman
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  api-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "16"
+
+      - name: Install Newman and reporters
+        run: |
+          npm install -g newman
+          npm install -g newman-reporter-htmlextra
+
+      # Chạy tất cả collection với file CSV tương ứng
+      - name: Run All API Tests
+        run: |
+          mkdir -p ./newman-results
+
+          # Lặp qua tất cả các file collection
+          for collection in ./api-testing/postman/*.postman_collection.json; do
+            # Lấy tên collection (không có đuôi .postman_collection.json)
+            collection_name=$(basename "$collection" .postman_collection.json)
+            
+            # Xử lý tên để tìm file CSV tương ứng
+            csv_name=""
+            if [[ "$collection_name" == "Add Product" ]]; then
+              csv_name="AddProduct.csv"
+            elif [[ "$collection_name" == "Edit Product" ]]; then
+              csv_name="EditProduct.csv"
+            elif [[ "$collection_name" == "Search and Filter" ]]; then
+              csv_name="SearchFilter.csv"
+            fi
+            
+            # Nếu tìm thấy file CSV tương ứng, chạy collection với file đó
+            if [[ -n "$csv_name" && -f "./api-testing/postman/$csv_name" ]]; then
+              echo "Running tests for $collection_name with $csv_name"
+              
+              newman run "$collection" \
+                -d "./api-testing/postman/$csv_name" \
+                --reporters cli,htmlextra \
+                --reporter-htmlextra-export "./newman-results/${collection_name// /-}-report.html"
+            else
+              echo "CSV file not found for $collection_name"
+            fi
+          done
+
+      # Upload tất cả kết quả test
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: newman-test-results
+          path: ./newman-results

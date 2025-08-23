@@ -1,0 +1,196 @@
+{
+	"info": {
+		"_postman_id": "864df9c0-f7e0-4e94-9a95-4fd6185a7833",
+		"name": "Add Product",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "47123385",
+		"_collection_link": "https://duy-nguyen-ee114f4e-4953385.postman.co/workspace/duy-nguyen-ee114f4e's-Workspace~2a7c83c1-e5b8-43e5-81a4-c0affe89526a/collection/47123385-864df9c0-f7e0-4e94-9a95-4fd6185a7833?action=share&source=collection_link&creator=47123385"
+	},
+	"item": [
+		{
+			"name": "Admin Login",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"let response = pm.response.json();\r",
+							"\r",
+							"if (response.access_token) {\r",
+							"    pm.collectionVariables.set(\"authToken\", response.access_token);\r",
+							"    console.log(\"Token saved:\", response.access_token);\r",
+							"} else {\r",
+							"    console.error(\"No token found in response\");\r",
+							"}\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"email\": \"admin@practicesoftwaretesting.com\",\r\n    \"password\": \"welcome01\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8091/users/login",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8091",
+					"path": [
+						"users",
+						"login"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Add Product",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"let actualStatus = pm.response.code;  \r",
+							"let expectedStatus = Number(pm.iterationData.get(\"expected_status\"));  \r",
+							"let testDescription = pm.iterationData.get(\"test_description\");  \r",
+							"\r",
+							"let errors = [];\r",
+							"\r",
+							"// ===== STATUS CODE CHECK =====\r",
+							"if (actualStatus !== expectedStatus) {\r",
+							"    errors.push(`❌ Status code ${actualStatus} không khớp expected ${expectedStatus}`);\r",
+							"}\r",
+							"\r",
+							"// ===== CREATE PRODUCT RESPONSE CHECK =====\r",
+							"if (expectedStatus === 201) {\r",
+							"    let responseBody = pm.response.json();\r",
+							"    let requestData = JSON.parse(pm.request.body.raw);\r",
+							"\r",
+							"    // Check từng field\r",
+							"    if (responseBody.name !== requestData.name) {\r",
+							"        errors.push(`❌ Name không khớp (expected \"${requestData.name}\", actual \"${responseBody.name}\")`);\r",
+							"    }\r",
+							"    if (responseBody.description !== requestData.description) {\r",
+							"        errors.push(`❌ Description không khớp`);\r",
+							"    }\r",
+							"    if (String(responseBody.price) !== String(requestData.price)) {\r",
+							"        errors.push(`❌ Price không khớp (expected ${requestData.price}, actual ${responseBody.price})`);\r",
+							"    }\r",
+							"    if (String(responseBody.brand_id) !== String(requestData.brand_id)) {\r",
+							"        errors.push(`❌ Brand ID không khớp`);\r",
+							"    }\r",
+							"    if (String(responseBody.category_id) !== String(requestData.category_id)) {\r",
+							"        errors.push(`❌ Category ID không khớp`);\r",
+							"    }\r",
+							"    if (String(responseBody.product_image_id) !== String(requestData.product_image_id)) {\r",
+							"        errors.push(`❌ Product Image ID không khớp`);\r",
+							"    }\r",
+							"    if (responseBody.is_location_offer !== requestData.is_location_offer) {\r",
+							"        errors.push(`❌ is_location_offer không khớp`);\r",
+							"    }\r",
+							"    if (responseBody.is_rental !== requestData.is_rental) {\r",
+							"        errors.push(`❌ is_rental không khớp`);\r",
+							"    }\r",
+							"\r",
+							"    // Stock nếu có\r",
+							"    if (requestData.hasOwnProperty('stock')) {\r",
+							"        if (!responseBody.hasOwnProperty('stock')) {\r",
+							"            errors.push(`❌ Response thiếu field stock`);\r",
+							"        } else if (String(responseBody.stock) !== String(requestData.stock)) {\r",
+							"            errors.push(`❌ Stock không khớp`);\r",
+							"        }\r",
+							"    }\r",
+							"\r",
+							"    // Check response không có field lạ\r",
+							"    let responseKeys = Object.keys(responseBody);\r",
+							"    for (let key of responseKeys) {\r",
+							"        if (key !== 'id' && !requestData.hasOwnProperty(key)) {\r",
+							"            errors.push(`❌ Response có field thừa \"${key}\"`);\r",
+							"        }\r",
+							"    }\r",
+							"}\r",
+							"\r",
+							"// ===== FINAL EXPECT =====\r",
+							"pm.test(`Kết quả kiểm thử | ${testDescription}`, function () {\r",
+							"    pm.expect(errors, errors.join(\"\\n\")).to.be.empty;\r",
+							"});\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{authToken}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"id\": \"{{id}}\",\r\n  \"name\": \"{{name}}\",\r\n  \"description\": \"{{description}}\",\r\n  \"stock\": \"{{stock}}\",\r\n  \"price\": \"{{price}}\",\r\n  \"brand_id\": \"{{brand_id}}\",\r\n  \"category_id\": \"{{category_id}}\",\r\n  \"product_image_id\": \"{{product_image_id}}\",\r\n  \"is_location_offer\": {{is_location_offer}},\r\n  \"is_rental\": {{is_rental}}\r\n}\r\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8091/products",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8091",
+					"path": [
+						"products"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"variable": [
+		{
+			"key": "authToken",
+			"value": ""
+		}
+	]
+}

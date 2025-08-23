@@ -1,0 +1,87 @@
+{
+	"info": {
+		"_postman_id": "8e1fe17e-57a9-41ef-a4dc-4f3fd7625524",
+		"name": "Search and Filter",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "47123385",
+		"_collection_link": "https://duy-nguyen-ee114f4e-4953385.postman.co/workspace/duy-nguyen-ee114f4e's-Workspace~2a7c83c1-e5b8-43e5-81a4-c0affe89526a/collection/47123385-8e1fe17e-57a9-41ef-a4dc-4f3fd7625524?action=share&source=collection_link&creator=47123385"
+	},
+	"item": [
+		{
+			"name": "Search and Filter",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"let actualStatus = pm.response.code;  \r",
+							"let expectedStatus = pm.iterationData.get(\"expected_status\");  \r",
+							"let testDescription = pm.iterationData.get(\"description\");  \r",
+							"\r",
+							"// Tạo mảng chứa lỗi\r",
+							"let errors = [];\r",
+							"\r",
+							"// Test status code\r",
+							"pm.test(`Status code should be ${expectedStatus} | ${testDescription}`, function () {  \r",
+							"    try {\r",
+							"        pm.expect(actualStatus).to.eql(Number(expectedStatus));  \r",
+							"    } catch (e) {\r",
+							"        errors.push(`Status code mismatch: expected ${expectedStatus}, got ${actualStatus}`);\r",
+							"    }\r",
+							"});\r",
+							"\r",
+							"// Nếu là create thành công (201) → check body\r",
+							"if (Number(expectedStatus) === 201) {\r",
+							"    let responseBody = pm.response.json();\r",
+							"    let requestData = JSON.parse(pm.request.body.raw);\r",
+							"\r",
+							"    // So sánh các field quan trọng\r",
+							"    try { pm.expect(responseBody.name).to.equal(requestData.name); } \r",
+							"    catch (e) { errors.push(\"Tên sản phẩm không khớp\"); }\r",
+							"\r",
+							"    try { pm.expect(responseBody.price.toString()).to.equal(requestData.price.toString()); } \r",
+							"    catch (e) { errors.push(\"Giá sản phẩm không khớp\"); }\r",
+							"\r",
+							"    try { pm.expect(responseBody.category_id.toString()).to.equal(requestData.category_id.toString()); } \r",
+							"    catch (e) { errors.push(\"Category ID không khớp\"); }\r",
+							"}\r",
+							"\r",
+							"// ===== FINAL TEST RESULT =====\r",
+							"pm.test(`Kết quả kiểm thử cho test case: ${testDescription}`, function () {\r",
+							"    pm.expect(errors, errors.join(\"\\n\")).to.be.empty;\r",
+							"});\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8091{{endpoint}}",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8091{{endpoint}}"
+				}
+			},
+			"response": []
+		}
+	]
+}
