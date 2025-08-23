@@ -70,8 +70,11 @@ jobs:
         run: |
           echo "Checking API version..."
           docker compose exec -T laravel-api php artisan --version
-          docker compose exec -T laravel-api composer show | grep laravel || true
-          docker compose exec -T laravel-api composer show 2>/dev/null | grep laravel || echo "Laravel packages not found"
+          if docker compose exec -T laravel-api composer show >/dev/null 2>&1; then
+            docker compose exec -T laravel-api composer show | grep laravel || echo "Laravel packages not found"
+          else
+            echo "Composer not installed in laravel-api container"
+          fi
 
       - name: Set up database
         run: |
@@ -161,7 +164,7 @@ jobs:
                 "key": "base_url",
                 "value": "http://localhost:8091",
                 "enabled": true
-              },
+              }
             ],
             "_postman_variable_scope": "environment"
           }
