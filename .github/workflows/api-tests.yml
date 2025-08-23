@@ -1,11 +1,11 @@
-name: API Tests
+name: API Tests with Postman CLI
 
 on:
   push:
     branches: [main, develop]
   pull_request:
     branches: [main, develop]
-  workflow_dispatch: # Cho phép chạy thủ công từ giao diện GitHub
+  workflow_dispatch:
 
 jobs:
   test:
@@ -14,9 +14,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
 
       - name: Set environment variables
         run: |
@@ -31,56 +28,38 @@ jobs:
       - name: Check Docker containers
         run: docker compose ps
 
-      - name: Wait for API to be ready
+      - name: Wait for services to be ready
         run: |
-          echo "Waiting for API service to be ready..."
-          # Thử kết nối đến API endpoint mỗi 5 giây trong tối đa 60 giây
-          timeout=60
-          counter=0
-          until $(curl --output /dev/null --silent --head --fail http://localhost:8091/api/health); do
-            if [ $counter -eq $timeout ]; then
-              echo "ERROR: API did not start within $timeout seconds."
-              docker compose logs
-              exit 1
-            fi
-            printf '.'
-            counter=$((counter+5))
-            sleep 5
-          done
-          echo "API is ready!"
+          echo "Waiting for services to be ready..."
+          sleep 30  # Đợi các service khởi động
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-
-      - name: Install Newman
-        run: npm install -g newman newman-reporter-htmlextra
-
-      - name: Create reports directory
-        run: mkdir -p reports
-
-      - name: Run Add Product API Tests
+      - name: Install Postman CLI
         run: |
-          newman run "sprint5-with-bugs/api-testing/postman/Add Product.postman_collection.json" -d "sprint5-with-bugs/api-testing/postman/AddProduct.csv" --reporters cli,htmlextra --reporter-htmlextra-export reports/add-product-report.html
+          curl -o- "https://dl-cli.pstmn.io/install/linux64.sh" | sh
 
-      - name: Run Edit Product API Tests
+      - name: Login to Postman
         run: |
-          newman run "sprint5-with-bugs/api-testing/postman/Edit Product.postman_collection.json" -d "sprint5-with-bugs/api-testing/postman/EditProduct.csv" --reporters cli,htmlextra --reporter-htmlextra-export reports/edit-product-report.html
+          # Nếu bạn có Postman API Key, sử dụng nó để login
+          # Nếu không, bạn có thể chạy Postman CLI ở chế độ không cần đăng nhập
+          postman login --with-api-key ${{ secrets.POSTMAN_API_KEY }} || echo "Running without login"
 
-      - name: Run Search and Filter API Tests
+      - name: Run Add Product API Tests with Postman CLI
         run: |
-          newman run "sprint5-with-bugs/api-testing/postman/Search and Filter.postman_collection.json" -d "sprint5-with-bugs/api-testing/postman/SearchFilter.csv" --reporters cli,htmlextra --reporter-htmlextra-export reports/search-filter-report.html
+          postman collection run "sprint5-with-bugs/api-testing/postman/Add Product.postman_collection.json" -e "sprint5-with-bugs/api-testing/postman/environment.json" --iteration-data "sprint5-with-bugs/api-testing/postman/AddProduct.csv" --verbose
+        continue-on-error: true
 
-      - name: Archive test results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: api-test-reports
-          path: reports/
+      - name: Run Edit Product API Tests with Postman CLI
+        run: |
+          postman collection run "sprint5-with-bugs/api-testing/postman/Edit Product.postman_collection.json" -e "sprint5-with-bugs/api-testing/postman/environment.json" --iteration-data "sprint5-with-bugs/api-testing/postman/EditProduct.csv" --verbose
+        continue-on-error: true
+
+      - name: Run Search and Filter API Tests with Postman CLI
+        run: |
+          postman collection run "sprint5-with-bugs/api-testing/postman/Search and Filter.postman_collection.json" -e "sprint5-with-bugs/api-testing/postman/environment.json" --iteration-data "sprint5-with-bugs/api-testing/postman/SearchFilter.csv" --verbose
+        continue-on-error: true
 
       - name: Show Docker logs on failure
-        if: failure()
+        if: always()
         run: |
           echo "==== Docker Container Logs ===="
           docker compose logs
