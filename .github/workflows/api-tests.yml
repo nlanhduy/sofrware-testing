@@ -25,11 +25,11 @@ jobs:
       
       - name: Start Docker Compose services
         run: |
-          docker-compose up -d
+          docker compose up -d
           echo "Docker Compose services started"
       
       - name: Check Docker containers
-        run: docker-compose ps
+        run: docker compose ps
       
       - name: Wait for API to be ready
         run: |
@@ -40,7 +40,7 @@ jobs:
           until $(curl --output /dev/null --silent --head --fail http://localhost:8091/api/health); do
             if [ $counter -eq $timeout ]; then
               echo "ERROR: API did not start within $timeout seconds."
-              docker-compose logs
+              docker compose logs
               exit 1
             fi
             printf '.'
@@ -83,8 +83,8 @@ jobs:
         if: failure()
         run: |
           echo "==== Docker Container Logs ===="
-          docker-compose logs
+          docker compose logs
       
       - name: Shutdown Docker Compose
         if: always()
-        run: docker-compose down -v
+        run: docker compose down -v
