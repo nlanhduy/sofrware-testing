@@ -57,10 +57,10 @@ jobs:
             fi
           done
 
-      # Upload tất cả kết quả test
+      # Upload tất cả kết quả test (đã cập nhật lên v4)
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: newman-test-results
           path: ./newman-results
