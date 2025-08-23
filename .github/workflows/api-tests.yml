@@ -13,12 +13,12 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: '16'
+          node-version: '20'
       
       - name: Install Newman
         run: npm install -g newman newman-reporter-htmlextra
@@ -40,7 +40,7 @@ jobs:
       
       - name: Archive test results
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4  # Cập nhật lên v4
         with:
           name: api-test-reports
           path: reports/
