@@ -181,6 +181,8 @@ jobs:
 
       - name: Run Add Product API Tests with Postman CLI
         run: |
+          echo "Validating AddProduct.csv..."
+          head -5 "sprint5-with-bugs/api-testing/postman/AddProduct.csv"
           postman collection run "sprint5-with-bugs/api-testing/postman/Add Product.postman_collection.json" \
             -e "sprint5-with-bugs/api-testing/postman/environment.json" \
             --iteration-data "sprint5-with-bugs/api-testing/postman/AddProduct.csv" \
@@ -189,6 +191,8 @@ jobs:
 
       - name: Run Edit Product API Tests with Postman CLI
         run: |
+          echo "Validating EditProduct.csv..."
+          head -5 "sprint5-with-bugs/api-testing/postman/EditProduct.csv"
           postman collection run "sprint5-with-bugs/api-testing/postman/Edit Product.postman_collection.json" \
             -e "sprint5-with-bugs/api-testing/postman/environment.json" \
             --iteration-data "sprint5-with-bugs/api-testing/postman/EditProduct.csv" \
@@ -197,6 +201,8 @@ jobs:
 
       - name: Run Search and Filter API Tests with Postman CLI
         run: |
+          echo "Validating SearchFilter.csv..."
+          head -5 "sprint5-with-bugs/api-testing/postman/SearchFilter.csv"
           postman collection run "sprint5-with-bugs/api-testing/postman/Search and Filter.postman_collection.json" \
             -e "sprint5-with-bugs/api-testing/postman/environment.json" \
             --iteration-data "sprint5-with-bugs/api-testing/postman/SearchFilter.csv" \
