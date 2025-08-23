@@ -61,7 +61,17 @@
         {
           "listen": "prerequest",
           "script": {
-            "exec": [""],
+            "exec": [
+              "let offer = data.is_location_offer || \"\";\r",
+              "let rental = data.is_rental || \"\";\r",
+              "\r",
+              "let offerBool = String(offer).toLowerCase() === \"true\";\r",
+              "let rentalBool = String(rental).toLowerCase() === \"true\";\r",
+              "\r",
+              "pm.collectionVariables.set(\"is_location_offer\", offerBool);\r",
+              "pm.collectionVariables.set(\"is_rental\", rentalBool);\r",
+              ""
+            ],
             "type": "text/javascript",
             "packages": {}
           }
@@ -162,7 +172,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\r\n  \"id\": \"{{id}}\",\r\n  \"name\": \"{{name}}\",\r\n  \"description\": \"{{description}}\",\r\n  \"stock\": \"{{stock}}\",\r\n  \"price\": \"{{price}}\",\r\n  \"brand_id\": \"{{brand_id}}\",\r\n  \"category_id\": \"{{category_id}}\",\r\n  \"product_image_id\": \"{{product_image_id}}\",\r\n  \"is_location_offer\": {{is_location_offer}},\r\n  \"is_rental\": {{is_rental}}\r\n}\r\n",
+          "raw": "{\r\n  \"name\": \"{{name}}\",\r\n  \"description\": \"{{description}}\",\r\n  \"stock\": \"{{stock}}\",\r\n  \"price\": \"{{price}}\",\r\n  \"brand_id\": \"{{brand_id}}\",\r\n  \"category_id\": \"{{category_id}}\",\r\n  \"product_image_id\": \"{{product_image_id}}\",\r\n  \"is_location_offer\": {{is_location_offer}},\r\n  \"is_rental\": {{is_rental}}\r\n}",
           "options": {
             "raw": {
               "language": "json"
@@ -181,6 +191,14 @@
   "variable": [
     {
       "key": "authToken",
+      "value": ""
+    },
+    {
+      "key": "is_location_offer",
+      "value": ""
+    },
+    {
+      "key": "is_rental",
       "value": ""
     }
   ]
