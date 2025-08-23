@@ -11,54 +11,125 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Set environment variables
         run: |
           echo "SPRINT_FOLDER=sprint5-with-bugs" >> $GITHUB_ENV
           echo "DISABLE_LOGGING=false" >> $GITHUB_ENV
-      
+
       - name: Start Docker Compose services
         run: |
           docker compose up -d
           echo "Docker Compose services started"
-      
+
       - name: Check Docker containers
         run: docker compose ps
-      
+
       - name: Wait for services to be ready
         run: |
           echo "Waiting for services to be ready..."
           sleep 30  # Đợi các service khởi động
-      
+
+      - name: Wait for database to be ready
+        run: |
+          echo "Waiting for database to be ready..."
+          timeout=60
+          counter=0
+          until docker compose exec -T mariadb mysql -uroot -proot -e "SELECT 1" >/dev/null 2>&1; do
+            if [ $counter -eq $timeout ]; then
+              echo "ERROR: Database did not start within $timeout seconds."
+              docker compose logs mariadb
+              exit 1
+            fi
+            printf '.'
+            counter=$((counter+5))
+            sleep 5
+          done
+          echo "Database is ready!"
+
+      - name: Check database status
+        run: |
+          echo "Checking database connection..."
+          docker compose exec -T mariadb mysql -uroot -proot -e "SHOW DATABASES;"
+
+      - name: Migrate and seed database
+        run: |
+          echo "Running migrations with fresh database..."
+          docker compose exec -T laravel-api php artisan migrate:fresh --seed
+
+          echo "Checking database tables..."
+          docker compose exec -T mariadb mysql -uroot -proot -e "USE toolshop; SHOW TABLES;"
+
+          echo "Checking users in database..."
+          docker compose exec -T mariadb mysql -uroot -proot -e "USE toolshop; SELECT id, email, SUBSTRING(password, 1, 20) as password_preview FROM users LIMIT 5;"
+
+      - name: Clear Laravel cache
+        run: |
+          echo "Clearing Laravel cache..."
+          docker compose exec -T laravel-api php artisan config:clear
+          docker compose exec -T laravel-api php artisan cache:clear
+          docker compose exec -T laravel-api php artisan route:clear
+
+      - name: Check API routes
+        run: |
+          echo "Checking API routes..."
+          docker compose exec -T laravel-api php artisan route:list | grep -i login || echo "No login routes found"
+
+      - name: Test API connection
+        run: |
+          echo "Testing API health..."
+          curl -v http://localhost:8091/status || echo "Status endpoint not available"
+
+          echo "Testing API documentation..."
+          curl -s http://localhost:8091/api/documentation | head -20
+
+      - name: Create environment file for Postman
+        run: |
+          echo "Creating environment file for Postman..."
+          cat > "sprint5-with-bugs/api-testing/postman/environment.json" << 'EOF'
+          {
+            "id": "test-env",
+            "name": "Test Environment",
+            "values": [
+              {
+                "key": "baseUrl",
+                "value": "http://localhost:8091",
+                "enabled": true
+              }
+            ],
+            "_postman_variable_scope": "environment"
+          }
+          EOF
+
       - name: Install Postman CLI
         run: |
           curl -o- "https://dl-cli.pstmn.io/install/linux64.sh" | sh
-      
+
       - name: Login to Postman
         run: |
           postman login --with-api-key ${{ secrets.POSTMAN_API_KEY }} || echo "Running without login"
-      
+
       - name: Run Add Product API Tests with Postman CLI
         run: |
           postman collection run "sprint5-with-bugs/api-testing/postman/Add Product.postman_collection.json" --iteration-data "sprint5-with-bugs/api-testing/postman/AddProduct.csv" --verbose
         continue-on-error: true
-      
+
       - name: Run Edit Product API Tests with Postman CLI
         run: |
           postman collection run "sprint5-with-bugs/api-testing/postman/Edit Product.postman_collection.json" --iteration-data "sprint5-with-bugs/api-testing/postman/EditProduct.csv" --verbose
         continue-on-error: true
-      
+
       - name: Run Search and Filter API Tests with Postman CLI
         run: |
           postman collection run "sprint5-with-bugs/api-testing/postman/Search and Filter.postman_collection.json" --iteration-data "sprint5-with-bugs/api-testing/postman/SearchFilter.csv" --verbose
         continue-on-error: true
-      
+
       - name: Show Docker logs on failure
         if: always()
         run: |
           echo "==== Docker Container Logs ===="
           docker compose logs
-      
+
       - name: Shutdown Docker Compose
         if: always()
         run: docker compose down -v
