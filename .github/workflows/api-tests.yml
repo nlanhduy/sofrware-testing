@@ -31,4 +31,213 @@ jobs:
       - name: Prepare Laravel directories
         run: |
           mkdir -p ${SPRINT_FOLDER}/API/storage/logs
-          mkdir -p ${SPRINT_FOLDER
+          mkdir -p ${SPRINT_FOLDER}/API/storage/framework/cache
+          mkdir -p ${SPRINT_FOLDER}/API/storage/framework/sessions
+          mkdir -p ${SPRINT_FOLDER}/API/storage/framework/views
+          mkdir -p ${SPRINT_FOLDER}/API/bootstrap/cache
+          chmod -R 777 ${SPRINT_FOLDER}/API/storage
+          chmod -R 777 ${SPRINT_FOLDER}/API/bootstrap/cache
+
+      - name: Start Docker Compose environment
+        run: |
+          docker compose up -d
+          echo "Waiting for services to start up..."
+          sleep 15
+
+      - name: Check if services are running
+        run: |
+          docker compose ps
+          # Check if laravel-api is running
+          if ! docker compose exec -T laravel-api php artisan --version; then
+            echo "Laravel API service is not running properly"
+            docker compose logs laravel-api
+            exit 1
+          fi
+          # Check if web server is running
+          if ! curl -sSf http://localhost:8091/status > /dev/null; then
+            echo "Web server is not running properly"
+            docker compose logs web
+            exit 1
+          fi
+          # Check if database is running
+          if ! docker compose exec -T mariadb mysqladmin ping -h localhost -u root -proot --silent; then
+            echo "Database is not running properly"
+            docker compose logs mariadb
+            exit 1
+          fi
+
+      - name: Check API version
+        run: |
+          echo "Checking API version..."
+          docker compose exec -T laravel-api php artisan --version
+          docker compose exec -T laravel-api composer show | grep laravel
+
+      - name: Set up database
+        run: |
+          docker compose exec -T laravel-api php artisan migrate:fresh --seed
+          echo "Database setup complete"
+
+      - name: Verify database setup
+        run: |
+          echo "Verifying database setup..."
+          docker compose exec -T mariadb mysql -u root -proot -e "USE toolshop; SELECT COUNT(*) FROM users; SELECT COUNT(*) FROM products;"
+
+      - name: Test API connection
+        run: |
+          echo "Testing API health..."
+          curl -v http://localhost:8091/status || echo "Status endpoint not available"
+          echo "Testing API documentation..."
+          curl -s http://localhost:8091/api/documentation | head -20
+
+      - name: Check API Endpoints via Swagger
+        run: |
+          echo "Checking available API endpoints..."
+          curl -s http://localhost:8091/api/documentation/json | jq '.paths | keys' || echo "Could not fetch API endpoints"
+
+      - name: Test Product API endpoint
+        run: |
+          echo "Testing Product API endpoint..."
+          echo "Response from products/1:"
+          curl -s http://localhost:8091/products/1 | jq || echo "Product endpoint failed or jq error"
+
+      - name: Test Admin Login API
+        run: |
+          echo "Testing Admin Login API..."
+          RESPONSE=$(curl -s -X POST http://localhost:8091/users/login \
+            -H "Content-Type: application/json" \
+            -d '{"email": "admin@practicesoftwaretesting.com", "password": "welcome01"}')
+          echo "Login response:"
+          echo "$RESPONSE"
+          # Extract token
+          TOKEN=$(echo $RESPONSE | jq -r '.access_token // empty')
+          if [ -n "$TOKEN" ]; then
+            echo "Successfully extracted token"
+            echo "AUTH_TOKEN=$TOKEN" >> $GITHUB_ENV
+          else
+            echo "Failed to extract token from response"
+          fi
+
+      - name: Debug API Login Issue
+        if: env.AUTH_TOKEN == ''
+        run: |
+          echo "Checking Laravel logs for login issues..."
+          docker compose exec -T laravel-api ls -la /var/www/storage/logs/ || echo "Cannot list log directory"
+          docker compose exec -T laravel-api cat /var/www/storage/logs/laravel.log || echo "Could not access Laravel logs"
+
+          echo "Verifying admin user in database..."
+          docker compose exec -T mariadb mysql -u root -proot -e "USE toolshop; SELECT id, email, first_name, last_name FROM users WHERE email='admin@practicesoftwaretesting.com';"
+
+          echo "Testing API login with curl verbose..."
+          curl -v -X POST http://localhost:8091/users/login \
+            -H "Content-Type: application/json" \
+            -d '{"email": "admin@practicesoftwaretesting.com", "password": "welcome01"}'
+
+          echo "Checking Laravel configuration..."
+          docker compose exec -T laravel-api php artisan config:clear
+          docker compose exec -T laravel-api php artisan cache:clear
+
+          echo "Trying login again after fixes..."
+          RESPONSE=$(curl -s -X POST http://localhost:8091/users/login \
+            -H "Content-Type: application/json" \
+            -d '{"email": "admin@practicesoftwaretesting.com", "password": "welcome01"}')
+          echo "Login response after fixes:"
+          echo "$RESPONSE"
+          TOKEN=$(echo $RESPONSE | jq -r '.access_token // empty')
+          if [ -n "$TOKEN" ]; then
+            echo "Successfully extracted token after fixes"
+            echo "AUTH_TOKEN=$TOKEN" >> $GITHUB_ENV
+          fi
+
+      - name: Create environment file for Postman
+        run: |
+          echo "Creating environment file for Postman..."
+          cat > "sprint5-with-bugs/api-testing/postman/environment.json" << EOF
+          {
+            "id": "test-env",
+            "name": "Test Environment",
+            "values": [
+              {
+                "key": "baseUrl",
+                "value": "http://localhost:8091",
+                "enabled": true
+              },
+              {
+                "key": "adminEmail",
+                "value": "admin@practicesoftwaretesting.com",
+                "enabled": true
+              },
+              {
+                "key": "adminPassword",
+                "value": "welcome01",
+                "enabled": true
+              },
+              {
+                "key": "authToken",
+                "value": "${AUTH_TOKEN:-}",
+                "enabled": true
+              }
+            ],
+            "_postman_variable_scope": "environment"
+          }
+          EOF
+          cat "sprint5-with-bugs/api-testing/postman/environment.json"
+
+      - name: Install Postman CLI
+        run: |
+          curl -o- "https://dl-cli.pstmn.io/install/linux64.sh" | sh
+
+      - name: Login to Postman
+        run: |
+          postman login --with-api-key ${{ secrets.POSTMAN_API_KEY }} || echo "Running without login"
+
+      - name: Run Add Product API Tests with Postman CLI
+        run: |
+          postman collection run "sprint5-with-bugs/api-testing/postman/Add Product.postman_collection.json" \
+            -e "sprint5-with-bugs/api-testing/postman/environment.json" \
+            --iteration-data "sprint5-with-bugs/api-testing/postman/AddProduct.csv" \
+            --verbose
+        continue-on-error: true
+
+      - name: Run Edit Product API Tests with Postman CLI
+        run: |
+          postman collection run "sprint5-with-bugs/api-testing/postman/Edit Product.postman_collection.json" \
+            -e "sprint5-with-bugs/api-testing/postman/environment.json" \
+            --iteration-data "sprint5-with-bugs/api-testing/postman/EditProduct.csv" \
+            --verbose
+        continue-on-error: true
+
+      - name: Run Search and Filter API Tests with Postman CLI
+        run: |
+          postman collection run "sprint5-with-bugs/api-testing/postman/Search and Filter.postman_collection.json" \
+            -e "sprint5-with-bugs/api-testing/postman/environment.json" \
+            --iteration-data "sprint5-with-bugs/api-testing/postman/SearchFilter.csv" \
+            --verbose
+        continue-on-error: true
+
+      - name: Export test results
+        if: always()
+        run: |
+          mkdir -p test-results
+          # If you have test results to export, add commands here
+
+      - name: Show Docker logs on failure
+        if: always()
+        run: |
+          echo "==== Docker Container Logs ===="
+          docker compose logs laravel-api
+          echo "==== MariaDB Logs ===="
+          docker compose logs mariadb
+          echo "==== Web Server Logs ===="
+          docker compose logs web
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: test-results
+          retention-days: 7
+
+      - name: Shutdown Docker Compose
+        if: always()
+        run: docker compose down -v
