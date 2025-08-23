@@ -18,15 +18,15 @@ jobs:
 
       - name: Start Docker Compose environment
         run: |
-          docker-compose up -d
+          docker compose up -d
           echo "Waiting for services to start up..."
           sleep 30  # Give services time to initialize
 
       - name: Check if services are running
         run: |
-          docker-compose ps
+          docker compose ps
           # Check if laravel-api is running
-          if ! docker-compose exec -T laravel-api php artisan --version; then
+          if ! docker compose exec -T laravel-api php artisan --version; then
             echo "Laravel API service is not running properly"
             exit 1
           fi
@@ -36,14 +36,14 @@ jobs:
             exit 1
           fi
           # Check if database is running
-          if ! docker-compose exec -T mariadb mysqladmin ping -h localhost -u root -proot --silent; then
+          if ! docker compose exec -T mariadb mysqladmin ping -h localhost -u root -proot --silent; then
             echo "Database is not running properly"
             exit 1
           fi
 
       - name: Set up database
         run: |
-          docker-compose exec -T laravel-api php artisan migrate:fresh --seed
+          docker compose exec -T laravel-api php artisan migrate:fresh --seed
           echo "Database setup complete"
 
       - name: Test API connection
