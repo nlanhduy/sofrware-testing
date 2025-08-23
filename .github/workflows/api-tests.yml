@@ -1,66 +1,46 @@
-name: API Tests with Newman
+name: API Tests
 
 on:
   push:
-    branches: [ main, master, develop ]
+    branches: [ main, develop ]
   pull_request:
-    branches: [ main, master ]
-  workflow_dispatch:
+    branches: [ main, develop ]
+  workflow_dispatch:  # Cho phép chạy thủ công từ giao diện GitHub
 
 jobs:
-  api-tests:
+  test:
     runs-on: ubuntu-latest
+    
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
       
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
         with:
           node-version: '16'
       
-      - name: Install Newman and reporters
-        run: |
-          npm install -g newman
-          npm install -g newman-reporter-htmlextra
+      - name: Install Newman
+        run: npm install -g newman newman-reporter-htmlextra
       
-      # Chạy tất cả collection với file CSV tương ứng
-      - name: Run All API Tests
-        run: |
-          mkdir -p ./newman-results
-          
-          # Lặp qua tất cả các file collection
-          for collection in ./api-testing/postman/*.postman_collection.json; do
-            # Lấy tên collection (không có đuôi .postman_collection.json)
-            collection_name=$(basename "$collection" .postman_collection.json)
-            
-            # Xử lý tên để tìm file CSV tương ứng
-            csv_name=""
-            if [[ "$collection_name" == "Add Product" ]]; then
-              csv_name="AddProduct.csv"
-            elif [[ "$collection_name" == "Edit Product" ]]; then
-              csv_name="EditProduct.csv"
-            elif [[ "$collection_name" == "Search and Filter" ]]; then
-              csv_name="SearchFilter.csv"
-            fi
-            
-            # Nếu tìm thấy file CSV tương ứng, chạy collection với file đó
-            if [[ -n "$csv_name" && -f "./api-testing/postman/$csv_name" ]]; then
-              echo "Running tests for $collection_name with $csv_name"
-              
-              newman run "$collection" \
-                -d "./api-testing/postman/$csv_name" \
-                --reporters cli,htmlextra \
-                --reporter-htmlextra-export "./newman-results/${collection_name// /-}-report.html"
-            else
-              echo "CSV file not found for $collection_name"
-            fi
-          done
+      - name: Create reports directory
+        run: mkdir -p reports
       
-      # Upload tất cả kết quả test (đã cập nhật lên v4)
-      - name: Upload test results
+      - name: Run Add Product API Tests
+        run: |
+          newman run "sprint5-with-bugs/api-testing/postman/Add Product.postman_collection.json" -d "sprint5-with-bugs/api-testing/postman/AddProduct.csv" --reporters cli,htmlextra --reporter-htmlextra-export reports/add-product-report.html
+      
+      - name: Run Edit Product API Tests
+        run: |
+          newman run "sprint5-with-bugs/api-testing/postman/Edit Product.postman_collection.json" -d "sprint5-with-bugs/api-testing/postman/EditProduct.csv" --reporters cli,htmlextra --reporter-htmlextra-export reports/edit-product-report.html
+      
+      - name: Run Search and Filter API Tests
+        run: |
+          newman run "sprint5-with-bugs/api-testing/postman/Search and Filter.postman_collection.json" -d "sprint5-with-bugs/api-testing/postman/SearchFilter.csv" --reporters cli,htmlextra --reporter-htmlextra-export reports/search-filter-report.html
+      
+      - name: Archive test results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v3
         with:
-          name: newman-test-results
-          path: ./newman-results
+          name: api-test-reports
+          path: reports/
