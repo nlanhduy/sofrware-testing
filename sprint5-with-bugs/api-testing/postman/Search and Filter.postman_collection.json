@@ -61,11 +61,27 @@
 				"disableBodyPruning": true
 			},
 			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{authToken}}",
+							"type": "string"
+						}
+					]
+				},
 				"method": "GET",
-				"header": [],
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
 				"body": {
 					"mode": "raw",
-					"raw": "",
+					"raw": "{\r\n  \"id\": \"{{id}}\",\r\n  \"name\": \"{{name}}\",\r\n  \"description\": \"{{description}}\",\r\n  \"stock\": \"{{stock}}\",\r\n  \"price\": \"{{price}}\",\r\n  \"brand_id\": \"{{brand_id}}\",\r\n  \"category_id\": \"{{category_id}}\",\r\n  \"product_image_id\": \"{{product_image_id}}\",\r\n  \"is_location_offer\": {{is_location_offer}},\r\n  \"is_rental\": {{is_rental}}\r\n}\r\n",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -73,12 +89,10 @@
 					}
 				},
 				"url": {
-					"raw": "http://localhost:8091{{endpoint}}",
-					"protocol": "http",
+					"raw": "{{base_url}}{{endpoint}}",
 					"host": [
-						"localhost"
-					],
-					"port": "8091{{endpoint}}"
+						"{{base_url}}{{endpoint}}"
+					]
 				}
 			},
 			"response": []

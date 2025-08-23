@@ -31,18 +31,21 @@ jobs:
         run: |
           docker compose up -d
           echo "Waiting for services to start up..."
-          for i in {1..60}; do
-            if curl -s http://localhost:8091/status > /dev/null; then
-              echo "Services are ready after $i seconds"
-              break
-            fi
-            echo "Waiting for services to be ready... ($i/60)"
-            sleep 5
-            if [ $i -eq 60 ]; then
-              echo "Timed out waiting for services"
-              exit 1
-            fi
-          done
+          sleep 10
+
+      - name: Fix Laravel permissions
+        run: |
+          echo "Fixing Laravel permissions..."
+          docker compose exec -T laravel-api mkdir -p /var/www/storage/logs
+          docker compose exec -T laravel-api mkdir -p /var/www/bootstrap/cache
+          docker compose exec -T laravel-api chmod -R 777 /var/www/storage
+          docker compose exec -T laravel-api chmod -R 777 /var/www/bootstrap/cache
+          docker compose exec -T laravel-api chown -R www-data:www-data /var/www/storage
+          docker compose exec -T laravel-api chown -R www-data:www-data /var/www/bootstrap/cache
+
+          # Restart Laravel service to apply changes
+          docker compose restart laravel-api
+          sleep 5
 
       - name: Check if services are running
         run: |
@@ -50,16 +53,19 @@ jobs:
           # Check if laravel-api is running
           if ! docker compose exec -T laravel-api php artisan --version; then
             echo "Laravel API service is not running properly"
+            docker compose logs laravel-api
             exit 1
           fi
           # Check if web server is running
           if ! curl -sSf http://localhost:8091/status > /dev/null; then
             echo "Web server is not running properly"
+            docker compose logs web
             exit 1
           fi
           # Check if database is running
           if ! docker compose exec -T mariadb mysqladmin ping -h localhost -u root -proot --silent; then
             echo "Database is not running properly"
+            docker compose logs mariadb
             exit 1
           fi
 
@@ -118,7 +124,7 @@ jobs:
         if: env.AUTH_TOKEN == ''
         run: |
           echo "Checking Laravel logs for login issues..."
-          docker compose exec -T laravel-api tail -n 100 storage/logs/laravel.log || echo "Could not access Laravel logs"
+          docker compose exec -T laravel-api cat /var/www/storage/logs/laravel.log || echo "Could not access Laravel logs"
 
           echo "Verifying admin user in database..."
           docker compose exec -T mariadb mysql -u root -proot -e "USE toolshop; SELECT id, email, first_name, last_name FROM users WHERE email='admin@practicesoftwaretesting.com';"
@@ -131,9 +137,6 @@ jobs:
           echo "Checking Laravel configuration..."
           docker compose exec -T laravel-api php artisan config:clear
           docker compose exec -T laravel-api php artisan cache:clear
-
-          echo "Checking storage permissions..."
-          docker compose exec -T laravel-api chmod -R 777 storage bootstrap/cache
 
           echo "Trying login again after fixes..."
           RESPONSE=$(curl -s -X POST http://localhost:8091/users/login \
@@ -160,21 +163,6 @@ jobs:
                 "value": "http://localhost:8091",
                 "enabled": true
               },
-              {
-                "key": "adminEmail",
-                "value": "admin@practicesoftwaretesting.com",
-                "enabled": true
-              },
-              {
-                "key": "adminPassword",
-                "value": "welcome01",
-                "enabled": true
-              },
-              {
-                "key": "authToken",
-                "value": "${AUTH_TOKEN:-}",
-                "enabled": true
-              }
             ],
             "_postman_variable_scope": "environment"
           }
