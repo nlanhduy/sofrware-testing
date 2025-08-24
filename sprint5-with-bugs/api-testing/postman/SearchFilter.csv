@@ -1,41 +1,41 @@
-description,id,endpoint,type,sort_option,min_price,max_price,search_term,brand_id,category_id,expected_status
-Valid sort by price ascending,1,"/products?sort=price,asc",sort,"price,asc",,,,,,200
-Valid sort by price descending,2,"/products?sort=price,desc",sort,"price,desc",,,,,,200
-Valid sort by name ascending,3,"/products?sort=name,asc",sort,"name,asc",,,,,,200
-Valid sort by name descending,4,"/products?sort=name,desc",sort,"name,desc",,,,,,200
-Invalid sort option,5,"/products?sort=invalid,asc",sort,"invalid,asc",,,,,,400
-Valid filter by single category,6,/products?by_category=3,filter_by_category,,,,,,3,200
-Valid filter by multiple categories,7,"/products?by_category=3,4,5",filter_by_category,,,,,,"3,4,5",200
-Filter by minimum valid category,8,/products?by_category=3,filter_by_category,,,,,,3,200
-Filter by maximum valid category,9,/products?by_category=12,filter_by_category,,,,,,12,200
-Filter by invalid category (below range),10,/products?by_category=2,filter_by_category,,,,,,2,422
-Filter by invalid category (above range),11,/products?by_category=13,filter_by_category,,,,,,13,422
-Edge case - all categories,33,"/products?by_category=3,4,5,6,7,8,9,10,11,12",filter_by_category,,,,,,"3,4,5,6,7,8,9,10,11,12",200
-Edge case - multiple invalid categories,37,"/products?by_category=1,2,13",filter_by_category,,,,,,"1,2,13",422
-Valid filter by brand 1,12,/products?by_brand=1,filter_by_brand,,,,1,,,200
-Valid filter by brand 2,13,/products?by_brand=2,filter_by_brand,,,,2,,,200
-Invalid filter by brand 0,14,/products?by_brand=0,filter_by_brand,,,,0,,,422
-Invalid filter by brand 3,15,/products?by_brand=3,filter_by_brand,,,,3,,,422
-"Edge case - multiple brands (one valid, one invalid)",38,"/products?by_brand=1,3",filter_by_brand,,,,"1,3",,,422
-Valid price range - minimum,16,"/products?between=price,1,200",price_range,,1,200,,,,200
-Valid price range - maximum,17,"/products?between=price,1,200",price_range,,1,200,,,,200
-Invalid price range - negative min,18,"/products?between=price,-1,200",price_range,,-1,200,,,,422
-Invalid price range - min > max,19,"/products?between=price,201,200",price_range,,201,200,,,,422
-Invalid price range - max > 200,20,"/products?between=price,1,201",price_range,,1,201,,,,422
-Edge case - price at boundary,31,"/products?between=price,1,1",price_range,,1,1,,,,200
-Edge case - price at max boundary,32,"/products?between=price,1,200",price_range,,1,200,,,,200
-Edge case - very high price,35,"/products?between=price,1,999",price_range,,1,999,,,,422
-Edge case - zero min price,36,"/products?between=price,0,200",price_range,,0,200,,,,422
-Edge case - decimal price values,39,"/products?between=price,1.5,199.99",price_range,,1.5,199.99,,,,200
-Edge case - price range with equal min and max,40,"/products?between=price,100,100",price_range,,100,100,,,,200
-Valid search term,21,/products/search?q=cutter,search,,,,cutter,,,200
-Search with empty term,22,/products/search?q=,search,,,,,,,400
-Search with special characters,23,/products/search?q=@#%,search,,,,@#%,,,200
-Edge case - long search term,34,/products/search?q=verylonganddetailedsearchtermoverthelimit,search,,,,verylonganddetailedsearchtermoverthelimit,,,200
-Combined filter - valid category and brand,24,/products?by_category=3&by_brand=1,"filter_by_category,filter_by_brand",,,,,1,3,200
-Combined filter - valid price range and sort,25,"/products?between=price,1,200&sort=price,asc","price_range,sort","price,asc",1,200,,,,200
-Combined filter - valid search and category,26,"/products/search?q=pliers&by_category=3,4","search,filter_by_category",,,,pliers,,"3,4",200
-Combined filter - invalid category and valid brand,27,/products?by_category=2&by_brand=1,"filter_by_category,filter_by_brand",,,,,1,2,422
-Combined filter - valid category and invalid brand,28,/products?by_category=3&by_brand=3,"filter_by_category,filter_by_brand",,,,,3,3,422
-Combined filter - invalid price range and valid sort,29,"/products?between=price,1,999&sort=price,asc","price_range,sort","price,asc",1,999,,,,422
-Combined filter - all valid parameters,30,"/products/search?q=hammer&by_category=5&by_brand=2&between=price,10,100&sort=price,desc","search,filter_by_category,filter_by_brand,price_range,sort","price,desc",10,100,hammer,2,5,200
+description,id,endpoint,expected_status
+Valid sort by price ascending,1,"/products?sort=price,asc",200
+Valid sort by price descending,2,"/products?sort=price,desc",200
+Valid sort by name ascending,3,"/products?sort=name,asc",200
+Valid sort by name descending,4,"/products?sort=name,desc",200
+Invalid sort option,5,"/products?sort=invalid,asc",400
+Valid filter by single category,6,/products?by_category=3,200
+Valid filter by multiple categories,7,"/products?by_category=3,4,5",200
+Filter by minimum valid category,8,/products?by_category=3,200
+Filter by maximum valid category,9,/products?by_category=12,200
+Filter by invalid category (below range),10,/products?by_category=2,422
+Filter by invalid category (above range),11,/products?by_category=13,422
+Edge case - all categories,33,"/products?by_category=3,4,5,6,7,8,9,10,11,12",200
+Edge case - multiple invalid categories,37,"/products?by_category=1,2,13",422
+Valid filter by brand 1,12,/products?by_brand=1,200
+Valid filter by brand 2,13,/products?by_brand=2,200
+Invalid filter by brand 0,14,/products?by_brand=0,422
+Invalid filter by brand 3,15,/products?by_brand=3,422
+"Edge case - multiple brands (one valid, one invalid)",38,"/products?by_brand=1,3",422
+Valid price range - minimum,16,"/products?between=price,1,200",200
+Valid price range - maximum,17,"/products?between=price,1,200",200
+Invalid price range - negative min,18,"/products?between=price,-1,200",422
+Invalid price range - min > max,19,"/products?between=price,201,200",422
+Invalid price range - max > 200,20,"/products?between=price,1,201",422
+Edge case - price at boundary,31,"/products?between=price,1,1",200
+Edge case - price at max boundary,32,"/products?between=price,1,200",200
+Edge case - very high price,35,"/products?between=price,1,999",422
+Edge case - zero min price,36,"/products?between=price,0,200",422
+Edge case - decimal price values,39,"/products?between=price,1.5,199.99",200
+Edge case - price range with equal min and max,40,"/products?between=price,100,100",200
+Valid search term,21,/products/search?q=cutter,200
+Search with empty term,22,/products/search?q=,400
+Search with special characters,23,/products/search?q=@#%,200
+Edge case - long search term,34,/products/search?q=verylonganddetailedsearchtermoverthelimit,200
+Combined filter - valid category and brand,24,/products?by_category=3&by_brand=1,200
+Combined filter - valid price range and sort,25,"/products?between=price,1,200&sort=price,asc",200
+Combined filter - valid search and category,26,"/products/search?q=pliers&by_category=3,4",200
+Combined filter - invalid category and valid brand,27,/products?by_category=2&by_brand=1,422
+Combined filter - valid category and invalid brand,28,/products?by_category=3&by_brand=3,422
+Combined filter - invalid price range and valid sort,29,"/products?between=price,1,999&sort=price,asc",422
+Combined filter - all valid parameters,30,"/products/search?q=hammer&by_category=5&by_brand=2&between=price,10,100&sort=price,desc",200
